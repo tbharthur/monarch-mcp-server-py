@@ -50,15 +50,18 @@ pytest
 
 2. **Authentication** (`login_setup.py`): Standalone authentication script
    - Interactive MFA support
-   - Session persistence to `.mm/mm_session.pickle`
+   - Session saved as pickle format to `monarch_session.json` (despite .json extension)
    - Multiple session file location fallbacks
 
 ### Key Design Patterns
 
 - **Session Management**: The server checks multiple locations for saved sessions in priority order:
-  1. Environment variable `MONARCH_SESSION_FILE`
-  2. Local project paths
-  3. User home directory `~/.mm/mm_session.pickle`
+  1. Environment variable `MONARCH_SESSION_FILE` (defaults to `monarch_session.json`)
+  2. Project root directory: `monarch_session.json`
+  3. Project `.mm` directory: `.mm/mm_session.pickle`
+  4. User home directory: `~/.mm/mm_session.pickle`
+  
+  Note: The MonarchMoney library's `save_session()` always saves in pickle format regardless of file extension.
 
 - **Async/Sync Bridge**: Uses `run_async()` helper to run async MonarchMoney operations in sync MCP tool handlers
 
@@ -88,3 +91,17 @@ The server exposes these tools through the MCP protocol:
 ## Testing Approach
 
 Tests are configured to use pytest with async support. Test files should be placed in a `tests/` directory following the naming convention `test_*.py`.
+
+## Known Issues & Solutions
+
+### Session File Paths
+- The server contains some hardcoded paths that may need updating for different users
+- If authentication fails, check that session file paths in `server.py` match your actual project location
+
+### Account Data Formatting
+- Some accounts may have missing `type` or `institution` fields
+- The server handles these gracefully by returning `None` for missing fields
+
+### Debug Logging
+- Debug messages are printed to stderr and will appear in Claude Desktop logs
+- Useful for troubleshooting session loading issues
