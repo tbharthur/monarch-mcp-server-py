@@ -25,6 +25,7 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "pydantic>=2.0.0",
     "asyncio>=3.4.3",
+    "gql<3.5",  # Pin to 3.4.x for compatibility with monarchmoney
 ]
 
 [project.optional-dependencies]

@@ -11,7 +11,6 @@ from concurrent.futures import ThreadPoolExecutor
 
 from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
-import mcp.types as types
 from monarchmoney import MonarchMoney, RequireMFAException
 from pydantic import BaseModel, Field
 
@@ -57,10 +56,6 @@ async def get_monarch_client() -> MonarchMoney:
     if _monarch_client is None:
         _monarch_client = MonarchMoney()
         
-        # Debug: print to stderr so it shows in Claude Desktop logs
-        import sys
-        print(f"DEBUG: Looking for session files...", file=sys.stderr)
-        
         # Try to load existing session first - check multiple locations
         session_locations = [
             os.getenv("MONARCH_SESSION_FILE", "monarch_session.json"),
@@ -69,32 +64,22 @@ async def get_monarch_client() -> MonarchMoney:
             os.path.expanduser("~/.mm/mm_session.pickle")  # Default library location
         ]
         
-        print(f"DEBUG: Session locations to check: {session_locations}", file=sys.stderr)
-        
         for session_file in session_locations:
-            print(f"DEBUG: Checking {session_file}...", file=sys.stderr)
             if os.path.exists(session_file):
-                print(f"DEBUG: Found session file: {session_file}", file=sys.stderr)
                 logger.info(f"Found session file: {session_file}")
                 try:
                     # Try creating a fresh client and loading the session
                     test_client = MonarchMoney()
                     test_client.load_session(session_file)  # This is NOT async!
-                    print(f"DEBUG: Successfully loaded session from: {session_file}", file=sys.stderr)
                     logger.info(f"Successfully loaded Monarch Money session from: {session_file}")
                     _monarch_client = test_client
-                    
-                    # Test the session works
-                    logger.info("Testing session validity...")
                     return _monarch_client
                 except Exception as e:
                     logger.error(f"Failed to load session from {session_file}: {e}")
                     logger.error(f"Exception type: {type(e)}")
-                    import traceback
-                    logger.error(f"Traceback: {traceback.format_exc()}")
                     # Continue to next session file
             else:
-                logger.debug(f"Session file not found: {session_file}")
+                logger.info(f"Session file not found: {session_file}")
         
         # If no session found, try environment credentials
         email = os.getenv("MONARCH_EMAIL")
@@ -201,14 +186,12 @@ def get_accounts() -> str:
         # Format accounts for display
         account_list = []
         for account in accounts.get("accounts", []):
-            account_type = account.get("type", {})
-            institution = account.get("institution", {})
             account_info = {
                 "id": account.get("id"),
                 "name": account.get("displayName", account.get("name")),
-                "type": account_type.get("name") if account_type else None,
+                "type": account.get("type", {}).get("name"),
                 "balance": account.get("currentBalance"),
-                "institution": institution.get("name") if institution else None,
+                "institution": account.get("institution", {}).get("name"),
                 "is_active": account.get("isActive", True)
             }
             account_list.append(account_info)
