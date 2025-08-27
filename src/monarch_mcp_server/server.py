@@ -186,12 +186,14 @@ def get_accounts() -> str:
         # Format accounts for display
         account_list = []
         for account in accounts.get("accounts", []):
+            account_type = account.get("type", {})
+            institution = account.get("institution", {})
             account_info = {
                 "id": account.get("id"),
                 "name": account.get("displayName", account.get("name")),
-                "type": account.get("type", {}).get("name"),
+                "type": account_type.get("name") if isinstance(account_type, dict) else None,
                 "balance": account.get("currentBalance"),
-                "institution": account.get("institution", {}).get("name"),
+                "institution": institution.get("name") if isinstance(institution, dict) else None,
                 "is_active": account.get("isActive", True)
             }
             account_list.append(account_info)
@@ -250,7 +252,7 @@ def get_transactions(
                 "amount": txn.get("amount"),
                 "description": txn.get("description"),
                 "category": txn.get("category", {}).get("name") if txn.get("category") else None,
-                "account": txn.get("account", {}).get("displayName"),
+                "account": txn.get("account", {}).get("displayName") if txn.get("account") else None,
                 "merchant": txn.get("merchant", {}).get("name") if txn.get("merchant") else None,
                 "is_pending": txn.get("isPending", False)
             }
@@ -281,7 +283,7 @@ def get_budgets() -> str:
                 "amount": budget.get("amount"),
                 "spent": budget.get("spent"),
                 "remaining": budget.get("remaining"),
-                "category": budget.get("category", {}).get("name"),
+                "category": budget.get("category", {}).get("name") if budget.get("category") else None,
                 "period": budget.get("period")
             }
             budget_list.append(budget_info)
